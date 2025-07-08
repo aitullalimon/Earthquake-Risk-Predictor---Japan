@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Earthquake Risk Predictor - Japan</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+      body {
+        background-color: #f4f4f4;
+        font-family: 'Segoe UI', sans-serif;
+      }
+      .risk-box {
+        margin-top: 20px;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+      .risk-low { background-color: #d4edda; color: #155724; }
+      .risk-medium { background-color: #fff3cd; color: #856404; }
+      .risk-high { background-color: #f8d7da; color: #721c24; }
+      #map {
+        height: 300px;
+        margin-top: 20px;
+        border-radius: 12px;
+      }
+      .spinner-border {
+        display: none;
+        margin: 10px auto;
+      }
+      .help-img {
+        width: 50%;
+        display: block;
+        margin: 0 auto 10px auto;
+        border-radius: 8px;
+      }
+
+    </style>
+  </head>
+<body>
+
+  <div class="container mt-5">
+    <div class="d-flex justify-content-end mb-2">
+      <button class="btn btn-outline-secondary btn-sm" onclick="toggleLanguage()">🌐 <span id="lang-toggle">日本語</span></button>
+      <button class="btn btn-outline-info btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#helpModal">Help</button>
+    </div>
+
+  <div class="card shadow p-4">
+    <h2 class="text-center mb-4" id="title">Earthquake Risk Predictor</h2>
+
+    <form id="riskForm">
+      <div class="mb-3">
+        <label for="prefecture" class="form-label" id="pref-label">Select Prefecture</label>
+        <select class="form-select" id="prefecture">
+            <option value="">-- Choose --</option>
+            <option value="Hokkaido">Hokkaido</option>
+            <option value="Aomori">Aomori</option>
+            <option value="Iwate">Iwate</option>
+            <option value="Miyagi">Miyagi</option>
+            <option value="Akita">Akita</option>
+            <option value="Yamagata">Yamagata</option>
+            <option value="Fukushima">Fukushima</option>
+            <option value="Ibaraki">Ibaraki</option>
+            <option value="Tochigi">Tochigi</option>
+            <option value="Gunma">Gunma</option>
+            <option value="Saitama">Saitama</option>
+            <option value="Chiba">Chiba</option>
+            <option value="Tokyo">Tokyo</option>
+            <option value="Kanagawa">Kanagawa</option>
+            <option value="Niigata">Niigata</option>
+            <option value="Toyama">Toyama</option>
+            <option value="Ishikawa">Ishikawa</option>
+            <option value="Fukui">Fukui</option>
+            <option value="Yamanashi">Yamanashi</option>
+            <option value="Nagano">Nagano</option>
+            <option value="Gifu">Gifu</option>
+            <option value="Shizuoka">Shizuoka</option>
+            <option value="Aichi">Aichi</option>
+            <option value="Mie">Mie</option>
+            <option value="Shiga">Shiga</option>
+            <option value="Kyoto">Kyoto</option>
+            <option value="Osaka">Osaka</option>
+            <option value="Hyogo">Hyogo</option>
+            <option value="Nara">Nara</option>
+            <option value="Wakayama">Wakayama</option>
+            <option value="Tottori">Tottori</option>
+            <option value="Shimane">Shimane</option>
+            <option value="Okayama">Okayama</option>
+            <option value="Hiroshima">Hiroshima</option>
+            <option value="Yamaguchi">Yamaguchi</option>
+            <option value="Tokushima">Tokushima</option>
+            <option value="Kagawa">Kagawa</option>
+            <option value="Ehime">Ehime</option>
+            <option value="Kochi">Kochi</option>
+            <option value="Fukuoka">Fukuoka</option>
+            <option value="Saga">Saga</option>
+            <option value="Nagasaki">Nagasaki</option>
+            <option value="Kumamoto">Kumamoto</option>
+            <option value="Oita">Oita</option>
+            <option value="Miyazaki">Miyazaki</option>
+            <option value="Kagoshima">Kagoshima</option>
+            <option value="Okinawa">Okinawa</option>
+          </select>                    
+      </div>
+
+      <div class="text-center">
+        <div class="spinner-border text-danger" id="loadingSpinner" role="status"></div>
+      </div>
+      
+
+      <div class="mb-3">
+        <label for="coords" class="form-label" id="coords-label">Or Enter Coordinates (lat,lon)</label>
+        <input type="text" class="form-control" id="coords" placeholder="e.g., 35.6895,139.6917">
+      </div>
+
+      <button type="submit" class="btn btn-danger w-100" id="submit-btn">Predict Risk</button>
+    </form>
+
+    <div id="result" class="risk-box mt-4" style="display:none;"></div>
+    <div id="confidence" class="text-center mt-2 fw-bold"></div>
+    <div id="suggestions" class="text-center mt-2 text-muted"></div>
+    <div id="map"></div>
+    <div class="mt-4">
+      <h5>Risk Level Explanation</h5>
+      <ul>
+        <li><strong>Low</strong>: Minimal seismic activity expected.</li>
+        <li><strong>Medium</strong>: Some potential for moderate earthquakes.</li>
+        <li><strong>High</strong>: High potential for severe seismic activity.</li>
+      </ul>
+    </div>  
+  </div>
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="helpModalLabel">How to Use the Predictor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <img src="./japan-prefectures-hazard-map.png" alt="Japan Prefectures Map" class="help-img" onerror="this.style.display='none'">
+        <p id="help-text-en">
+          Select a prefecture from the dropdown or enter latitude and longitude manually.<br>
+          Click <strong>Predict Risk</strong> to view earthquake risk level based on location.<br>
+          The result includes the risk level, prediction confidence, and recommended safety tips.
+        </p>
+        <p id="help-text-jp" style="display:none;">
+          都道府県を選択するか、緯度と経度を入力してください。<br>
+          <strong>リスクを予測</strong> ボタンをクリックして、その場所の地震リスクを確認できます。<br>
+          結果には、リスクレベル、信頼度、そして安全対策の提案が表示されます。
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleLanguage() {
+  currentLang = currentLang === 'en' ? 'jp' : 'en';
+  document.getElementById('title').textContent = language[currentLang].title;
+  document.getElementById('pref-label').textContent = language[currentLang].selectPref;
+  document.getElementById('coords-label').textContent = language[currentLang].coords;
+  document.getElementById('submit-btn').textContent = language[currentLang].submit;
+  document.getElementById('lang-toggle').textContent = currentLang === 'en' ? '日本語' : 'English';
+
+  // Also update help modal content
+  document.getElementById('help-text-en').style.display = currentLang === 'en' ? 'block' : 'none';
+  document.getElementById('help-text-jp').style.display = currentLang === 'jp' ? 'block' : 'none';
+  document.getElementById('helpModalLabel').textContent = currentLang === 'en'
+    ? 'How to Use the Predictor' : '使い方のガイド';
+}
+</script>
+
+<div class="container mt-3">
+  <div id="eq-alert" class="alert alert-warning d-none" role="alert">
+    Loading recent earthquake alerts...
+  </div>
+</div>
+
+<div class="mt-5">
+  <h5>Earthquake Magnitude Chart – Lollipop Style with Risk Colors</h5>
+  <canvas id="lollipopChart" height="100"></canvas>
+</div>
+
+  <script>
+  fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson')
+    .then(res => res.json())
+    .then(data => {
+      const japanQuakes = data.features
+        .filter(f => {
+          const [lon, lat] = f.geometry.coordinates;
+          return lat >= 24 && lat <= 46 && lon >= 123 && lon <= 146;
+        })
+        .sort((a, b) => b.properties.time - a.properties.time)
+        .slice(0, 40); // Limit to latest 40
+  
+      const labels = japanQuakes.map(eq => {
+        const d = new Date(eq.properties.time);
+        return `${d.getMonth() + 1}-${d.getDate()}`;
+      });
+  
+      const dataPoints = japanQuakes.map((eq, i) => ({
+        x: i,
+        y: parseFloat(eq.properties.mag?.toFixed(1) || 0)
+      }));
+  
+      const riskColors = dataPoints.map(dp => {
+        if (dp.y >= 6.0) return '#dc3545'; // Red (High)
+        if (dp.y >= 4.5) return '#ffc107'; // Yellow (Medium)
+        return '#28a745';                 // Green (Low)
+      });
+      
+  
+      const ctx = document.getElementById('lollipopChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              type: 'line',
+              data: dataPoints,
+              borderColor: '#999',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false,
+              showLine: true,
+              tension: 0
+            },
+            {
+              type: 'scatter',
+              data: dataPoints,
+              backgroundColor: riskColors,
+              borderColor: '#000',
+              borderWidth: 1,
+              pointRadius: 6,
+              pointHoverRadius: 8
+            }
+          ]
+        },
+        options: {
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: context => {
+                  const y = context.raw.y;
+                  let risk = 'Low';
+                  if (y >= 6.0) risk = 'High';
+                  else if (y >= 4.5) risk = 'Medium';
+                  return `Magnitude: ${y} — Risk: ${risk}`;
+                }
+              }
+            },
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              ticks: {
+                callback: (val, idx) => labels[idx],
+                maxRotation: 90,
+                minRotation: 45
+              },
+              title: {
+                display: true,
+                text: 'Date'
+              }
+            },
+            y: {
+              min: 2.5,
+              max: 7,
+              title: {
+                display: true,
+                text: 'Magnitude'
+              }
+            }
+          }
+        }
+      });
+    })
+    //.catch(err => console.error("Lollipop chart error:", err));
+    .catch(err => {
+  spinner.style.display = 'none';
+  resultBox.style.display = 'block';
+  resultBox.className = 'risk-box risk-medium';
+  resultBox.textContent = 'API Error. Please check server.';
+  confidenceBox.textContent = '';
+  suggestionsBox.textContent = '';
+  console.error('API fetch failed:', err); // ✅ HERE
+  console.error("Lollipop chart error:", err)
+});
+
+  </script>
+  
+
+  <script>
+    // Add earthquake markers on Leaflet map with risk prediction
+    fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson')
+      .then(res => res.json())
+      .then(data => {
+        // Filter earthquakes in Japan region
+        const japanQuakes = data.features.filter(f => {
+          const [lon, lat] = f.geometry.coordinates;
+          return lat >= 24 && lat <= 46 && lon >= 123 && lon <= 146;
+        });
+  
+        // Process each quake
+        japanQuakes.forEach(eq => {
+          const mag = eq.properties.mag;
+          const coords = eq.geometry.coordinates;
+          const lon = coords[0];
+          const lat = coords[1];
+          const place = eq.properties.place || 'Unknown';
+          const time = new Date(eq.properties.time).toLocaleString();
+  
+          // Magnitude-based radius (in meters)
+          const radius = mag ? mag * 10000 : 2000;
+  
+          // Determine risk level
+          let riskLevel = 'Low';
+          let riskColor = '#28a745'; // green
+          if (mag >= 6.0) {
+            riskLevel = 'High';
+            riskColor = '#dc3545'; // red
+          } else if (mag >= 4.5) {
+            riskLevel = 'Medium';
+            riskColor = '#ffc107'; // yellow
+          }
+  
+          // Display result if resultBox exists
+          if (typeof resultBox !== 'undefined') {
+            resultBox.textContent = `${language[currentLang].submit}: ${riskLevel}`;
+          }
+  
+          const hazardGrid = {}; // { "lat_lon": [sumMag, count] }
+
+          // Create grid cells (0.5° lat/lon)
+          japanQuakes.forEach(eq => {
+            const [lon, lat] = eq.geometry.coordinates;
+            const mag = eq.properties.mag || 0;
+            const latKey = Math.floor(lat * 2) / 2; // rounds to nearest 0.5
+            const lonKey = Math.floor(lon * 2) / 2;
+            const key = `${latKey}_${lonKey}`;
+
+            if (!hazardGrid[key]) hazardGrid[key] = [0, 0];
+            hazardGrid[key][0] += mag;
+            hazardGrid[key][1] += 1;
+          });
+
+          Object.entries(hazardGrid).forEach(([key, [sum, count]]) => {
+            const [latStr, lonStr] = key.split("_");
+            const lat = parseFloat(latStr);
+            const lon = parseFloat(lonStr);
+            const avgMag = sum / count;
+
+            const color =
+              avgMag >= 6 ? '#d73027' : avgMag >= 4.5 ? '#fc8d59' : '#91cf60';
+
+            L.rectangle([
+              [lat, lon],
+              [lat + 0.5, lon + 0.5]
+            ], {
+              color: color,
+              fillColor: color,
+              fillOpacity: 0.45,
+              weight: 1
+            })
+            .addTo(map)
+            .bindPopup(`Avg Mag: ${avgMag.toFixed(1)}<br>Hazard: ${
+              avgMag >= 6 ? 'High' : avgMag >= 4.5 ? 'Medium' : 'Low'
+            }`);
+          });
+
+
+          // Draw circle on map
+          const circle = L.circle([lat, lon], {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.4,
+            radius: radius
+          }).addTo(map);
+  
+          circle.bindPopup(`
+            <strong>${place}</strong><br>
+            Magnitude: ${mag}<br>
+            Time: ${time}<br>
+            <span style="font-weight:bold;">Predicted Risk:</span> 
+            <span style="color: ${riskColor};">${riskLevel}</span>
+          `);
+        });
+      })
+      .catch(err => console.error("Earthquake map markers error:", err));
+  </script>
+  
+  
+  
+
+  <div class="mt-4">
+    <h5>Recent Earthquakes in Japan</h5>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped" id="quakeTable">
+        <thead class="table-dark">
+          <tr>
+            <th>Time</th>
+            <th>Prefecture (if available)</th>
+            <th>Coordinates</th>
+            <th>Magnitude</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  
+  
+  
+</div>
+
+
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<!-- Leaflet & Script Integration -->
+<script>
+  const language = {
+    en: {
+      title: "Earthquake Risk Predictor",
+      selectPref: "Select Prefecture",
+      coords: "Or Enter Coordinates (lat,lon)",
+      submit: "Predict Risk",
+      suggestions: {
+        High: "Evacuate early and stay alert.",
+        Medium: "Secure furniture and have supplies ready.",
+        Low: "Stay informed and prepare emergency kit."
+      }
+    },
+    jp: {
+      title: "地震リスク予測システム",
+      selectPref: "都道府県を選択してください",
+      coords: "または座標を入力してください（緯度, 経度）",
+      submit: "リスクを予測",
+      suggestions: {
+        High: "早めに避難し、警戒を続けてください。",
+        Medium: "家具を固定し、備蓄を準備しましょう。",
+        Low: "情報を確認し、非常用持ち出し袋を準備してください。"
+      }
+    }
+  };
+  
+  let currentLang = 'en';
+  
+  function toggleLanguage() {
+    currentLang = currentLang === 'en' ? 'jp' : 'en';
+    document.getElementById('title').textContent = language[currentLang].title;
+    document.getElementById('pref-label').textContent = language[currentLang].selectPref;
+    document.getElementById('coords-label').textContent = language[currentLang].coords;
+    document.getElementById('submit-btn').textContent = language[currentLang].submit;
+    document.getElementById('lang-toggle').textContent = currentLang === 'en' ? '日本語' : 'English';
+  }
+  
+  
+  const map = L.map('map').setView([35.6895, 139.6917], 5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  const legend = L.control({ position: 'bottomright' });
+    legend.onAdd = function () {
+      const div = L.DomUtil.create('div', 'info legend');
+      const grades = ['Low', 'Medium', 'High'];
+      const colors = ['#91cf60', '#fc8d59', '#d73027'];
+      grades.forEach((label, i) => {
+        div.innerHTML += `<i style="background:${colors[i]};width:18px;height:18px;display:inline-block;margin-right:6px;"></i> ${label}<br>`;
+      });
+      return div;
+    };
+    legend.addTo(map);
+
+  
+  const prefCoords = {
+    "Hokkaido": [43.0642, 141.3469], "Aomori": [40.8246, 140.7400], "Iwate": [39.7036, 141.1527],
+    "Miyagi": [38.2682, 140.8694], "Akita": [39.7186, 140.1024], "Yamagata": [38.2404, 140.3633],
+    "Fukushima": [37.7503, 140.4676], "Ibaraki": [36.3418, 140.4468], "Tochigi": [36.5657, 139.8836],
+    "Gunma": [36.3912, 139.0609], "Saitama": [35.8617, 139.6455], "Chiba": [35.6074, 140.1065],
+    "Tokyo": [35.6895, 139.6917], "Kanagawa": [35.4478, 139.6425], "Niigata": [37.9162, 139.0364],
+    "Toyama": [36.6953, 137.2113], "Ishikawa": [36.5947, 136.6256], "Fukui": [36.0652, 136.2216],
+    "Yamanashi": [35.6639, 138.5684], "Nagano": [36.6513, 138.1810], "Gifu": [35.4233, 136.7607],
+    "Shizuoka": [34.9756, 138.3828], "Aichi": [35.1802, 136.9066], "Mie": [34.7303, 136.5086],
+    "Shiga": [35.0045, 135.8686], "Kyoto": [35.0116, 135.7681], "Osaka": [34.6937, 135.5023],
+    "Hyogo": [34.6913, 135.1830], "Nara": [34.6851, 135.8048], "Wakayama": [34.2260, 135.1675],
+    "Tottori": [35.5011, 134.2351], "Shimane": [35.4723, 133.0505], "Okayama": [34.6618, 133.9344],
+    "Hiroshima": [34.3853, 132.4553], "Yamaguchi": [34.1785, 131.4737], "Tokushima": [34.0703, 134.5540],
+    "Kagawa": [34.3401, 134.0434], "Ehime": [33.8416, 132.7657], "Kochi": [33.5597, 133.5311],
+    "Fukuoka": [33.5904, 130.4017], "Saga": [33.2494, 130.2988], "Nagasaki": [32.7503, 129.8777],
+    "Kumamoto": [32.8031, 130.7079], "Oita": [33.2382, 131.6126], "Miyazaki": [31.9111, 131.4239],
+    "Kagoshima": [31.5602, 130.5581], "Okinawa": [26.2124, 127.6809]
+  };
+  
+  let japanQuakes = [];
+  
+  fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson')
+    .then(res => res.json())
+    .then(data => {
+      japanQuakes = data.features.filter(f => {
+        const [lon, lat] = f.geometry.coordinates;
+        return lat >= 24 && lat <= 46 && lon >= 123 && lon <= 146;
+      });
+  
+      japanQuakes.forEach(eq => {
+        const mag = eq.properties.mag;
+        const [lon, lat] = eq.geometry.coordinates;
+        const place = eq.properties.place || '—';
+        const time = new Date(eq.properties.time).toLocaleString();
+        const riskLevel = mag >= 5.5 ? 'High' : mag >= 4.5 ? 'Medium' : 'Low';
+  
+        L.circle([lat, lon], {
+          color: riskLevel === 'High' ? '#d9534f' : riskLevel === 'Medium' ? '#f0ad4e' : '#5cb85c',
+          fillColor: riskLevel === 'High' ? '#f2dede' : riskLevel === 'Medium' ? '#fcf8e3' : '#dff0d8',
+          fillOpacity: 0.5,
+          radius: 10000 + mag * 10000
+        }).addTo(map).bindPopup(
+          `<strong>${place}</strong><br>Magnitude: ${mag}<br>Time: ${time}<br><b>Predict Risk:</b> ${riskLevel}`
+        );
+      });
+  
+      // Show recent earthquake table and alert
+      const alertDiv = document.getElementById('eq-alert');
+      const tableBody = document.querySelector('#quakeTable tbody');
+      tableBody.innerHTML = '';
+  
+      if (japanQuakes.length > 0) {
+        const latest = japanQuakes[0];
+        const time = new Date(latest.properties.time).toLocaleString();
+        const mag = latest.properties.mag;
+        const place = latest.properties.place;
+        alertDiv.classList.remove('d-none');
+        alertDiv.innerHTML = `⚠️ <strong>Latest Earthquake:</strong> M${mag} near ${place} at ${time}`;
+      }
+  
+      japanQuakes.sort((a, b) => b.properties.time - a.properties.time);
+  
+      japanQuakes.slice(0, 50).forEach(eq => {
+        const time = new Date(eq.properties.time).toLocaleString();
+        const mag = eq.properties.mag?.toFixed(1) || '-';
+        const [lon, lat] = eq.geometry.coordinates;
+        const place = eq.properties.place || '—';
+  
+        const row = `<tr>
+          <td>${time}</td>
+          <td>${place}</td>
+          <td>${lat.toFixed(2)}, ${lon.toFixed(2)}</td>
+          <td>${mag}</td>
+        </tr>`;
+        tableBody.insertAdjacentHTML('beforeend', row);
+      });
+    });
+  
+  document.getElementById('riskForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const pref = document.getElementById('prefecture').value;
+    const coordsInput = document.getElementById('coords').value.trim();
+    const apiBase = "http://127.0.0.1:26025/predict"; //predict link
+    const resultBox = document.getElementById('result');
+    const confidenceBox = document.getElementById('confidence');
+    const suggestionsBox = document.getElementById('suggestions');
+  
+    let lat = null, lon = null, riskLevel = 'Low', confidence = 65;
+  
+    if (coordsInput) {
+      const match = coordsInput.match(/^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/);
+      if (match) {
+        lat = parseFloat(match[1]);
+        lon = parseFloat(match[3]);
+      } else {
+        alert("Invalid coordinates. Use format: lat,lon (e.g., 35.6895,139.6917)");
+        return;
+      }
+    } else if (pref && prefCoords[pref]) {
+      [lat, lon] = prefCoords[pref];
+    } else {
+      alert("Please select a prefecture or enter coordinates.");
+      return;
+    }
+  
+    map.setView([lat, lon], 7);
+    L.marker([lat, lon]).addTo(map).bindPopup(`Selected Location`).openPopup();
+  
+    const nearby = japanQuakes.filter(eq => {
+      const [eqLon, eqLat] = eq.geometry.coordinates;
+      const d = Math.sqrt((lat - eqLat) ** 2 + (lon - eqLon) ** 2);
+      return d < 2;
+    });
+  
+    const avgMag = nearby.length
+      ? nearby.reduce((sum, eq) => sum + eq.properties.mag, 0) / nearby.length
+      : 0;
+  
+    if (avgMag >= 5.5) {
+      riskLevel = 'High'; confidence = 90;
+    } else if (avgMag >= 4.5) {
+      riskLevel = 'Medium'; confidence = 75;
+    } else {
+      riskLevel = 'Low'; confidence = 60;
+    }
+  
+    resultBox.style.display = 'block';
+    resultBox.className = 'risk-box';
+    resultBox.textContent = `${language[currentLang].submit}: ${riskLevel}`;
+    resultBox.classList.add(
+      riskLevel === 'High' ? 'risk-high' :
+      riskLevel === 'Medium' ? 'risk-medium' :
+      'risk-low'
+    );
+    confidenceBox.textContent = `Confidence: ${confidence}%`;
+    suggestionsBox.textContent = language[currentLang].suggestions[riskLevel];    
+  });
+  </script>
+</body>
+</html>
