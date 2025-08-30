@@ -49,7 +49,8 @@ Open `version2.html` in your browser. You can use VS Code Live Server or any sta
 
 | Prediction UI | Interactive Map | Help Guide |
 |---------------|------------------|------------|
-| ![UI](screenshots/ui.png) | ![Map](screenshots/map.png) | ![Help](screenshots/help.png) |
+| ![UI](<img width="2636" height="1430" alt="image" src="https://github.com/user-attachments/assets/5d94fb0b-83a6-4e87-b0a8-0e9b6cae3de1" />
+) | ![Map](screenshots/map.png) | ![Help](screenshots/help.png) |
 
 ---
 
