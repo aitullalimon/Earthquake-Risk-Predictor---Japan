@@ -52,10 +52,7 @@ Open `index.html` in your browser. You can use VS Code Live Server or any static
 
 | Prediction UI | Interactive Map | Help Guide |
 |---------------|------------------|------------|
-| <img width="2636" height="1430" alt="image" src="https://github.com/user-attachments/assets/5d94fb0b-83a6-4e87-b0a8-0e9b6cae3de1" />
- | <img width="2590" height="1270" alt="image" src="https://github.com/user-attachments/assets/16a57f9c-13f3-4e46-abec-8003998c1df0" />
- | <img width="2630" height="1376" alt="image" src="https://github.com/user-attachments/assets/62898e9d-eb2b-45df-96cf-dd3e7d0b0312" />
- |
+| <img width="2636" height="1430" alt="image" src="https://github.com/user-attachments/assets/5d94fb0b-83a6-4e87-b0a8-0e9b6cae3de1" /> | <img width="2590" height="1270" alt="image" src="https://github.com/user-attachments/assets/16a57f9c-13f3-4e46-abec-8003998c1df0" /> | <img width="2630" height="1376" alt="image" src="https://github.com/user-attachments/assets/62898e9d-eb2b-45df-96cf-dd3e7d0b0312" /> |
 
 ---
 
