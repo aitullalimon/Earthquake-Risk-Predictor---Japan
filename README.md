@@ -1,5 +1,8 @@
-**Website visual:**
+# **Website visual:**
+
 https://aitullalimon.github.io/Earthquake-Risk-Predictor---Japan/
+
+---
 
 # Earthquake Risk Predictor for Japanese Prefectures
 
@@ -41,7 +44,7 @@ pr$run(port = 26025)
 ```
 
 ### 3. Launch Frontend
-Open `version2.html` in your browser. You can use VS Code Live Server or any static server.
+Open `index.html` in your browser. You can use VS Code Live Server or any static server.
 
 ---
 
@@ -49,14 +52,16 @@ Open `version2.html` in your browser. You can use VS Code Live Server or any sta
 
 | Prediction UI | Interactive Map | Help Guide |
 |---------------|------------------|------------|
-| ![UI](<img width="2636" height="1430" alt="image" src="https://github.com/user-attachments/assets/5d94fb0b-83a6-4e87-b0a8-0e9b6cae3de1" />
-) | ![Map](screenshots/map.png) | ![Help](screenshots/help.png) |
+| <img width="2636" height="1430" alt="image" src="https://github.com/user-attachments/assets/5d94fb0b-83a6-4e87-b0a8-0e9b6cae3de1" />
+ | <img width="2590" height="1270" alt="image" src="https://github.com/user-attachments/assets/16a57f9c-13f3-4e46-abec-8003998c1df0" />
+ | <img width="2630" height="1376" alt="image" src="https://github.com/user-attachments/assets/62898e9d-eb2b-45df-96cf-dd3e7d0b0312" />
+ |
 
 ---
 
 ## 📝 Credits
 
-- Developed by: **[Your Name]** (Kyoto College of Graduate Studies for Informatics)
+- Developed by: **['Aitulla Labib Limon' from 'Data Science']** (The Kyoto College of Graduate Studies for Informatics)
 - Earthquake Data: United States Geological Survey (USGS)
 - Map Basemap: OpenStreetMap
 
@@ -68,6 +73,6 @@ MIT License
 ---
 
 ## 🙋‍♂️ Feedback / Contact
-For improvements, bug reports, or collaboration, feel free to open an issue or email: `your@email.com`
+For improvements, bug reports, or collaboration, feel free to open an issue or email: `limonaitullalabib@gmail.com`
 
 ---
